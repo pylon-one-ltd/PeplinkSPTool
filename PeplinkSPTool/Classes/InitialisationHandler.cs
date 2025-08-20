@@ -1,6 +1,4 @@
-﻿using Serilog;
-using System.Reflection;
-using ILogger = Serilog.ILogger;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace PeplinkSPTool.Classes
 {
@@ -31,7 +29,7 @@ namespace PeplinkSPTool.Classes
             }
             
             // Configuration File Discovery
-            var ExecutablePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)?.Replace("file:\\", "").Replace("file:", "");
+            var ExecutablePath = Path.GetDirectoryName(AppContext.BaseDirectory)?.Replace("file:\\", "").Replace("file:", "");
             if( ApplicationConfigFile == null && ExecutablePath != null )
             {
                 // First check the parent directory for a global configuration file
@@ -55,36 +53,6 @@ namespace PeplinkSPTool.Classes
             if( ApplicationConfigFile == null ) return null;
             return new ConfigurationBuilder().AddJsonFile(ApplicationConfigFile, false, true)
             .AddJsonFile(ApplicationConfigFile.Replace(".json", ".development.json"), true, true).Build();
-        }
-        
-        /// <summary>
-        /// Initialise an instance of the Logger using the configuration file
-        /// </summary>
-        /// <param name="Configuration">IConfigurationBuilder instance of the config</param>
-        /// <param name="SectionName">The section of the config file to load from</param>
-        /// <returns>Logging instance</returns>
-        /// <exception cref="ArgumentException">Invalid Configuration File</exception>
-        public static ILogger InitLogger(IConfiguration Configuration, string SectionName)
-        {
-            return Configuration == null ? throw new ArgumentException("Invalid Configuration File") : 
-            new LoggerConfiguration().ReadFrom.Configuration(Configuration.GetSection(SectionName)).CreateLogger();
-        }
-        
-        /// <summary>
-        /// Create a IWebHostBuilder instance utilising Kestrel
-        /// </summary>
-        /// <param name="BindPath">Localhost path to bind to</param>
-        /// <param name="Configuration">IConfigurationBuilder instance of the config</param>
-        /// <typeparam name="T">Startup Type</typeparam>
-        /// <returns>IWebHostBuilder Instance</returns>
-        public static IWebHostBuilder CreateWebHostBuilder<T>(string BindPath, IConfiguration Configuration) where T : class
-        {
-            return new WebHostBuilder().UseKestrel().UseStartup<T>().UseUrls(BindPath)
-            .ConfigureLogging(logging => logging.AddSerilog())
-            .UseConfiguration(Configuration).UseDefaultServiceProvider((context, options) =>
-            {
-                options.ValidateScopes = context.HostingEnvironment.IsDevelopment();
-            });
         }
     }
 }

@@ -14,3 +14,6 @@ appsettings.development.json
 *.user
 bin
 obj
+release-artifacts
+windows-build
+macos-build

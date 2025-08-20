@@ -1,7 +1,7 @@
-﻿using Serilog;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using PeplinkSPTool.Classes;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Configuration;
 
 namespace PeplinkSPTool
 {
@@ -22,8 +22,6 @@ namespace PeplinkSPTool
         
             try
             {
-                Log.Logger = InitialisationHandler.InitLogger(configuration, "PeplinkSPTool");
-                
                 // Build auth path
                 var APIEndpoint = configuration.GetSection("PeplinkSPTool").GetValue<string>("Endpoint");
                 var ClientID = configuration.GetSection("PeplinkSPTool").GetValue<string>("ClientID");
@@ -34,8 +32,8 @@ namespace PeplinkSPTool
                 }
                 
                 // Start callback webserver
-                var WebRunner = InitialisationHandler.CreateWebHostBuilder<Startup>($"{Bind}/", configuration).Build();
-                _ = WebRunner.RunAsync();
+                var WebRunner = new LightweightHttpServer();
+                _ = WebRunner.StartServer();
                 
                 var AuthString = $"{APIEndpoint}/api/oauth2/auth?client_id={ClientID}&response_type=code&redirect_uri={Bind}/reply";
                 Console.WriteLine("Please perform authentication with InControl using your browser. Your browser will now open.");
@@ -50,7 +48,7 @@ namespace PeplinkSPTool
                 }
                 
                 // Shutdown webserver
-                await WebRunner.StopAsync();
+                WebRunner.StopServer();
                 var peplinkAPI = new PeplinkAPI(configuration);
                 
                 // Display root menu
@@ -112,11 +110,10 @@ namespace PeplinkSPTool
             }
             catch( Exception Ex )
             {
-                Log.Fatal(Ex, "Fatal error occurred");
-            }
-            finally
-            {
-                await Log.CloseAndFlushAsync();
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"Fatal error occurred: {Ex.Message}");
+                Console.WriteLine(Ex.StackTrace);
+                Console.ResetColor();
             }
         }
         
@@ -211,7 +208,7 @@ namespace PeplinkSPTool
                     }
                     
                     Console.WriteLine("");
-                    Console.WriteLine("(To exit the menu, press enter with no input)");
+                    Console.WriteLine("(To exit the menu, press enter with no input, to refresh the list, enter R)");
                     Console.WriteLine("Please enter a list of devices you would like to update as a comma seperated list (EG, 1,4,6):");
                     var ReadInput = Console.ReadLine();
                     if( string.IsNullOrWhiteSpace(ReadInput) )
@@ -219,7 +216,7 @@ namespace PeplinkSPTool
                         GroupName = null;
                         GroupID = null;
                     }
-                    else
+                    else if( ReadInput.ToLower() != "r" )
                     {
                         List<string> DeviceNames = [];
                         List<long> DeviceIDs = [];
@@ -300,7 +297,6 @@ namespace PeplinkSPTool
                             }
                             catch( Exception Ex )
                             {
-                                Log.Error(Ex, "Error with SP update");
                                 Console.ForegroundColor = ConsoleColor.DarkRed;
                                 Console.WriteLine($"Failed to update SP Status. {Ex.Message}. Press any key to continue.");
                             }

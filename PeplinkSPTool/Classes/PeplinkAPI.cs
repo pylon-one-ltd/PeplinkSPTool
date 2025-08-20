@@ -2,6 +2,7 @@ using System.Text;
 using Newtonsoft.Json;
 using PeplinkSPTool.Models;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 
 namespace PeplinkSPTool.Classes
 {
@@ -170,7 +171,7 @@ namespace PeplinkSPTool.Classes
                 {
                     throw new Exception("Server provided no response");
                 }
-                else if( ServerResponse.resp_code != "SUCCESS" )
+                else if( ServerResponse.resp_code != null && ServerResponse.resp_code != "SUCCESS" && ServerResponse.resp_code != "PENDING" )
                 {
                     throw new Exception($"Server response {ServerResponse.resp_code}: Message: {ServerResponse.message}");
                 }
