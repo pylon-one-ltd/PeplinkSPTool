@@ -1,0 +1,16 @@
+*.crt
+*.pem
+*.key
+*.srl
+*.pfx
+*.log
+*.db-shm
+*.db-wal
+*.rsa
+*.jwk
+.DS_Store
+.idea
+appsettings.development.json
+*.user
+bin
+obj
